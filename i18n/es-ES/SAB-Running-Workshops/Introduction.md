@@ -1,10 +1,10 @@
 ---
-title: Introduction
+title: Introducción
 sidebar_position: 0
 slug: /
 ---
 
-# Introduction {#23280858a4b680e8b50ad3abc4d2fead}
+# Introducción {#23280858a4b680e8b50ad3abc4d2fead}
 
-This document contains advice you may find useful if you are running a training workshop for Scripture App Builder.
+Este documento contiene consejos que puedes encontrar útiles si estás ejecutando un taller de formación para Scripture App Builder.
 
