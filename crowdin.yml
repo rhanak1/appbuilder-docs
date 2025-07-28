@@ -2,5 +2,5 @@ project_id: "812428"
 api_token_env: CROWDIN_PERSONAL_TOKEN
 
 "files":
-  - source: /docs/**/*.*
+  - source: /crowdin_sources/**/*.*
     translation: /i18n/%locale%/**/%original_file_name%
