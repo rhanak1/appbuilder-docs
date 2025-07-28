@@ -84,7 +84,7 @@ jobs:
           for outline in "${OUTLINE_ARRAY[@]}"; do
             outline_trimmed=$(echo "$outline" | xargs)
             # Clean docs dir
-            rimraf ./docs/
+            rm -rf docs && mkdir docs
             # Copy source or translated markdown into /docs
             # Replace en below with your locale code as desired
             cp -r crowdin_sources/$outline_trimmed/* docs/
