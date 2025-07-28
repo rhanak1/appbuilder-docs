@@ -1,0 +1,89 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      outlines:
+        description: 'Comma-separated list of outlines to generate PDFs for (leave blank for all)'
+        required: false
+        default: ''
+      logLevel:
+        description: "Log level"
+        required: false
+        default: "warning"
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+    
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: lts/*
+          
+      - name: Install dependencies
+        run: yarn
+
+      - name: Sync Crowdin files
+        uses: crowdin/github-action@v1
+        with:
+          upload_sources: true
+          upload_translations: false
+          download_translations: true
+          crowdin_branch_name: main
+        env:
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+          CROWDIN_PROJECT_ID: "812428"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set outlines variable
+        id: outlines
+        run: |
+          if [ -z "${{ github.event.inputs.outlines }}" ]; then                  #Generate pdfs for all outlines if none provided
+            echo "outlines=SAB-Installation-Instructions,SAB-Building-Apps,SAB-Installing-and-Building-Apps-on-a-Mac,SAB-App-Publishing-Checklist,SAB-Distributing-Apps,SAB-Using-Audacity-for-Audio-Text-Synchronization,SAB-Using-HearThis-for-Audio-Recording,SAB-Running-Workshops,SAB-AppStore-Optimization,SAB-Creating-Apps-with-Quizzes,SAB-Creating-Slideshow-Videos,RAB-Installation-Instructions,DAB-Installation-Instructions,KAB-Installation-Instructions" >> $GITHUB_OUTPUT
+          else
+            echo "outlines=${{ github.event.inputs.outlines }}" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Generate PDFs
+        run: |
+          OUTLINE_MAPPING=$(cat outlines.json)
+          IFS=',' read -ra OUTLINE_ARRAY <<< "${{ steps.outlines.outputs.outlines }}"
+          export DOCU_NOTION_INTEGRATION_TOKEN=${{ secrets.DOCU_NOTION_INTEGRATION_TOKEN }}
+          for outline in "${OUTLINE_ARRAY[@]}"; do                                                        #Generate a pdf for each outline
+            outline_trimmed=$(echo "$outline" | xargs)                 
+            root_page_id=$(echo "$OUTLINE_MAPPING" | jq -r --arg key "$outline_trimmed" '.[$key]')        #Get root page from outlines.json using outline name as key
+            if [ "$root_page_id" = "null" ] || [ -z "$root_page_id" ]; then
+              echo "No root page ID found for $outline_trimmed, skipping."
+              continue
+            fi
+            echo "Generating PDF for $outline_trimmed (root page: $root_page_id)"
+            export DOCU_NOTION_SAMPLE_ROOT_PAGE=$root_page_id
+            echo "$DOCU_NOTION_INTEGRATION_TOKEN"
+            yarn pull
+            yarn build
+            npm install -g http-server wait-on
+            echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns                      # Ubuntu >= 23 has AppArmor enabled by default, which breaks Puppeteer
+            http-server build/ -p 3000 --silent &
+            wait-on http://localhost:3000
+            npx docu-pdf http://localhost:3000 --outputPath $outline_trimmed.pdf
+          done
+
+      - name: Commit New Source Material
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: GHAction - Commit content changes pulled from notion
+          
+      - name: Upload PDFs
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-pdfs
+          path: ./*.pdf
