@@ -72,7 +72,7 @@ jobs:
         env:
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
           CROWDIN_PROJECT_ID: "812428"
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       # For *each* outline, copy to /docs, build, and generate PDF
       - name: Build and generate PDFs
