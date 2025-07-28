@@ -54,6 +54,8 @@ jobs:
               echo "No root page ID found for $outline_trimmed, skipping."
               continue
             fi
+            echo "Generating PDF for $outline_trimmed (root page: $root_page_id)"
+            export DOCU_NOTION_SAMPLE_ROOT_PAGE=$root_page_id
             # Replace the next line with however you can specify output dir
             yarn pull
             mv docs/* crowdin_sources/$outline_trimmed
