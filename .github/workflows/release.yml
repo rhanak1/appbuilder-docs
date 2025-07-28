@@ -55,7 +55,7 @@ jobs:
               continue
             fi
             # Replace the next line with however you can specify output dir
-            yarn pull --output-dir crowdin_sources/$outline_trimmed
+            yarn pull
             mv docs/* crowdin_sources/$outline_trimmed
           done
 
