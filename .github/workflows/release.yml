@@ -35,9 +35,11 @@ jobs:
       - name: Set outlines variable
         id: outlines
         run: |
-          # (set OUTLINES as before, see earlier messages)
-          # Example with three outlines:
-          echo "outlines=OutlineA,OutlineB,OutlineC" >> $GITHUB_OUTPUT
+          if [ -z "${{ github.event.inputs.outlines }}" ]; then                  #Generate pdfs for all outlines if none provided
+            echo "outlines=SAB-Installation-Instructions,SAB-Building-Apps,SAB-Installing-and-Building-Apps-on-a-Mac,SAB-App-Publishing-Checklist,SAB-Distributing-Apps,SAB-Using-Audacity-for-Audio-Text-Synchronization,SAB-Using-HearThis-for-Audio-Recording,SAB-Running-Workshops,SAB-AppStore-Optimization,SAB-Creating-Apps-with-Quizzes,SAB-Creating-Slideshow-Videos,RAB-Installation-Instructions,DAB-Installation-Instructions,KAB-Installation-Instructions" >> $GITHUB_OUTPUT
+          else
+            echo "outlines=${{ github.event.inputs.outlines }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Gather all outlines into /crowdin_sources
         run: |
@@ -57,17 +59,17 @@ jobs:
             mv docs/* crowdin_sources/$outline_trimmed
           done
 
-      # Upload all markdown (all outlines) to Crowdin for translation
-      - name: Upload sources to Crowdin
-        run: npx crowdin upload sources
+      - name: Sync Crowdin files
+        uses: crowdin/github-action@v1
+        with:
+          upload_sources: true
+          upload_translations: false
+          download_translations: true
+          crowdin_branch_name: main
         env:
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
-
-      # Download translations back from Crowdin
-      - name: Download translations from Crowdin
-        run: npx crowdin download
-        env:
-          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+          CROWDIN_PROJECT_ID: "812428"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # For *each* outline, copy to /docs, build, and generate PDF
       - name: Build and generate PDFs
