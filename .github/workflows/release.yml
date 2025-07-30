@@ -80,6 +80,9 @@ jobs:
           IFS=',' read -ra OUTLINE_ARRAY <<< "${{ steps.outlines.outputs.outlines }}"
           for outline in "${OUTLINE_ARRAY[@]}"; do
             outline_trimmed=$(echo "$outline" | xargs)
+            group_prefix=$(echo "$outline_trimmed" | cut -d'-' -f1)
+            rest_of_name=$(echo "$outline_trimmed" | cut -d'-' -f2-)
+            mkdir -p pdfs/$group_prefix/$rest_of_name
             # Clean docs dir
             rm -rf docs && mkdir docs
             # Copy source or translated markdown into /docs
@@ -92,17 +95,20 @@ jobs:
             http-server build/ -p 3000 --silent &
             wait-on http://localhost:3000
             npx docu-pdf http://localhost:3000 --outputPath $outline_trimmed.pdf
+            mv $outline_trimmed.pdf pdfs/$group_prefix/$rest_of_name/
             
             rm -rf docs && mkdir docs
             cp -r i18n/es-ES/$outline_trimmed/* docs/
             yarn build
             npx docu-pdf http://localhost:3000 --outputPath es-$outline_trimmed.pdf
+            mv es-$outline_trimmed.pdf pdfs/$group_prefix/$rest_of_name/
 
             rm -rf docs && mkdir docs
             cp -r i18n/fr-FR/$outline_trimmed/* docs/
             yarn build
             npx docu-pdf http://localhost:3000 --outputPath fr-$outline_trimmed.pdf
-
+            mv fr-$outline_trimmed.pdf pdfs/$group_prefix/$rest_of_name/
+            
             kill %1  # stop local server
           done
 
@@ -110,4 +116,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: documentation-pdfs
-          path: "*.pdf"
+          path: pdfs/
