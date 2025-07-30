@@ -42,22 +42,26 @@ jobs:
 
       - name: Gather all outlines into /crowdin_sources
         run: |
-          mkdir -p crowdin_sources  # ensure folder exists
+          mkdir -p crowdin_sources
+          
           OUTLINE_MAPPING=$(cat outlines.json)
           IFS=',' read -ra OUTLINE_ARRAY <<< "${{ steps.outlines.outputs.outlines }}"
+          
           export DOCU_NOTION_INTEGRATION_TOKEN=${{ secrets.DOCU_NOTION_INTEGRATION_TOKEN }}
+          
           for outline in "${OUTLINE_ARRAY[@]}"; do
             outline_trimmed=$(echo "$outline" | xargs)
             root_page_id=$(echo "$OUTLINE_MAPPING" | jq -r --arg key "$outline_trimmed" '.[$key]')
+            
             if [ "$root_page_id" = "null" ] || [ -z "$root_page_id" ]; then
               echo "No root page ID found for $outline_trimmed, skipping."
               continue
             fi
-            echo "Generating PDF for $outline_trimmed (root page: $root_page_id)"
+            
+            echo "Pulling Notion pages for $outline_trimmed (root page: $root_page_id)"
             export DOCU_NOTION_SAMPLE_ROOT_PAGE=$root_page_id
-            # Replace the next line with however you can specify output dir
             yarn pull
-            rm -rf crowdin_sources/$outline_trimmed && mkdir crowdin_sources/$outline_trimmed
+            rm -rf crowdin_sources/$outline_trimmed && mkdir crowdin_sources/$outline_trimmed        #mv will not work if there is content in the directory
             mv docs/* crowdin_sources/$outline_trimmed
           done
 
@@ -73,30 +77,36 @@ jobs:
           CROWDIN_PROJECT_ID: "812428"
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      # For *each* outline, copy to /docs, build, and generate PDF
+      - name: Start local server
+        run: |
+          npm install -g http-server wait-on
+          echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns
+          http-server build/ -p 3000 --silent &
+          wait-on http://localhost:3000
+      
       - name: Build and generate PDFs
         run: |
           OUTLINE_MAPPING=$(cat outlines.json)
           IFS=',' read -ra OUTLINE_ARRAY <<< "${{ steps.outlines.outputs.outlines }}"
+          
           for outline in "${OUTLINE_ARRAY[@]}"; do
             outline_trimmed=$(echo "$outline" | xargs)
             group_prefix=$(echo "$outline_trimmed" | cut -d'-' -f1)
             rest_of_name=$(echo "$outline_trimmed" | cut -d'-' -f2-)
-            mkdir -p pdfs/$group_prefix/$rest_of_name
-            # Clean docs dir
+            mkdir -p pdfs/$group_prefix/$rest_of_name        Organize pdfs here so output isn't cluttered
+            
+            #Clean docs dir
             rm -rf docs && mkdir docs
-            # Copy source or translated markdown into /docs
-            # Replace en below with your locale code as desired
+            
+            #Move files into /docs for Docusaurus
             cp -r crowdin_sources/$outline_trimmed/* docs/
-            # Now /docs has only this outline's content
             yarn build
-            npm install -g http-server wait-on
-            echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns
-            http-server build/ -p 3000 --silent &
-            wait-on http://localhost:3000
+
+            #For English pdf
             npx docu-pdf http://localhost:3000 --outputPath $outline_trimmed.pdf
             mv $outline_trimmed.pdf pdfs/$group_prefix/$rest_of_name/
-            
+
+            #Repeat for any other desired languages, translated .md files will be in the i18n directory
             rm -rf docs && mkdir docs
             cp -r i18n/es-ES/$outline_trimmed/* docs/
             yarn build
@@ -108,8 +118,6 @@ jobs:
             yarn build
             npx docu-pdf http://localhost:3000 --outputPath fr-$outline_trimmed.pdf
             mv fr-$outline_trimmed.pdf pdfs/$group_prefix/$rest_of_name/
-            
-            kill %1  # stop local server
           done
 
       - name: Upload PDFs
