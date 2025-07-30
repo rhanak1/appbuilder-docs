@@ -58,7 +58,7 @@ jobs:
             # Replace the next line with however you can specify output dir
             yarn pull
             mkdir -p crowdin_sources/$outline_trimmed
-            mv docs/* crowdin_sources/$outline_trimmed
+            mv -f docs/* crowdin_sources/$outline_trimmed
           done
 
       - name: Sync Crowdin files
