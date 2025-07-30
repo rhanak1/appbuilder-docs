@@ -76,13 +76,6 @@ jobs:
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
           CROWDIN_PROJECT_ID: "812428"
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-
-      - name: Start local server
-        run: |
-          npm install -g http-server wait-on
-          echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns
-          http-server build/ -p 3000 --silent &
-          wait-on http://localhost:3000
       
       - name: Build and generate PDFs
         run: |
@@ -94,6 +87,11 @@ jobs:
             group_prefix=$(echo "$outline_trimmed" | cut -d'-' -f1)
             rest_of_name=$(echo "$outline_trimmed" | cut -d'-' -f2-)
             mkdir -p pdfs/$group_prefix/$rest_of_name        Organize pdfs here so output isn't cluttered
+
+            npm install -g http-server wait-on
+            echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns
+            http-server build/ -p 3000 --silent &
+            wait-on http://localhost:3000
             
             #Clean docs dir
             rm -rf docs && mkdir docs
