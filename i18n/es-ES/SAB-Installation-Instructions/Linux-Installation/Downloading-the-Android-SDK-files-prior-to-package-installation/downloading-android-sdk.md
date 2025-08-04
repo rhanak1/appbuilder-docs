@@ -16,7 +16,7 @@ wget -ci [http://bit.ly/android-sdk-urls](http://bit.ly/android-sdk-urls)
 
 :::tip
 
-Note: the -c option will allow the downloads to be resumed if it fails part way through the download.
+Note: the -c option will allow the downloads to be resumed if it fails part way through the download\*\*.\*\*
 
 :::
 
