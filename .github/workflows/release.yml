@@ -98,17 +98,17 @@ jobs:
             mv $outline_trimmed.pdf pdfs/$group_prefix/$rest_of_name/
 
             #Repeat for any other desired languages, .md should be in /i18n directory
-            rm -rf docs && mkdir docs
-            cp -r i18n/es-ES/$outline_trimmed/* docs/
-            yarn build
-            npx docu-pdf http://localhost:3000 --outputPath es-$outline_trimmed.pdf
-            mv es-$outline_trimmed.pdf pdfs/$group_prefix/$rest_of_name/
+            #rm -rf docs && mkdir docs
+            #cp -r i18n/es-ES/$outline_trimmed/* docs/
+            #yarn build
+            #npx docu-pdf http://localhost:3000 --outputPath es-$outline_trimmed.pdf
+            #mv es-$outline_trimmed.pdf pdfs/$group_prefix/$rest_of_name/
 
-            rm -rf docs && mkdir docs
-            cp -r i18n/fr-FR/$outline_trimmed/* docs/
-            yarn build
-            npx docu-pdf http://localhost:3000 --outputPath fr-$outline_trimmed.pdf
-            mv fr-$outline_trimmed.pdf pdfs/$group_prefix/$rest_of_name/
+            #rm -rf docs && mkdir docs
+            #cp -r i18n/fr-FR/$outline_trimmed/* docs/
+            #yarn build
+            #npx docu-pdf http://localhost:3000 --outputPath fr-$outline_trimmed.pdf
+            #mv fr-$outline_trimmed.pdf pdfs/$group_prefix/$rest_of_name/
             
             kill %1  # stop local server
           done
